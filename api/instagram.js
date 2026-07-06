@@ -2,6 +2,11 @@ const { Readable } = require("node:stream");
 
 const MAX_MEDIA_BYTES = 500 * 1024 * 1024;
 const INSTAGRAM_HOSTS = new Set(["instagram.com", "www.instagram.com"]);
+const PAGE_HEADERS = {
+  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/126 Safari/537.36",
+  "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
+  Accept: "text/html,application/xhtml+xml",
+};
 
 module.exports = async function handler(request, response) {
   if (request.method === "POST") return findInstagramMedia(request, response);
@@ -13,18 +18,7 @@ module.exports = async function handler(request, response) {
 async function findInstagramMedia(request, response) {
   try {
     const target = parseInstagramUrl(request.body?.url);
-    const page = await fetch(target, {
-      redirect: "follow",
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/126 Safari/537.36",
-        "Accept-Language": "es-ES,es;q=0.9,en;q=0.8",
-        Accept: "text/html,application/xhtml+xml",
-      },
-    });
-
-    if (!page.ok) throw new Error("Instagram no permitió abrir esa publicación.");
-    const html = await page.text();
-    const mediaUrl = extractVideoUrl(html);
+    const mediaUrl = await resolveInstagramVideo(target);
     if (!mediaUrl) throw new Error("No encontramos un vídeo público. Comprueba que sea un Reel o publicación pública.");
     validateMediaUrl(mediaUrl);
 
@@ -34,6 +28,73 @@ async function findInstagramMedia(request, response) {
   } catch (error) {
     return response.status(422).json({ error: error.message || "No se pudo leer la publicación." });
   }
+}
+
+async function resolveInstagramVideo(target) {
+  // Instagram cambia con frecuencia el HTML principal. Probamos también las
+  // vistas de inserción, que suelen exponer el vídeo de publicaciones públicas.
+  const pageUrls = [target, new URL("embed/", target).toString(), new URL("embed/captioned/", target).toString()];
+  for (const pageUrl of pageUrls) {
+    try {
+      const page = await fetch(pageUrl, {
+        redirect: "follow",
+        headers: PAGE_HEADERS,
+        signal: AbortSignal.timeout(12000),
+      });
+      if (!page.ok) continue;
+      const mediaUrl = extractVideoUrl(await page.text());
+      if (mediaUrl) return mediaUrl;
+    } catch {
+      // Continuamos con la siguiente variante pública.
+    }
+  }
+
+  // Último intento con el endpoint que usa la propia web de Instagram.
+  return fetchVideoFromMediaInfo(target);
+}
+
+async function fetchVideoFromMediaInfo(target) {
+  try {
+    const shortcode = new URL(target).pathname.split("/").filter(Boolean)[1];
+    if (!shortcode) return null;
+    const mediaId = shortcodeToMediaId(shortcode);
+    const info = await fetch(`https://www.instagram.com/api/v1/media/${mediaId}/info/`, {
+      redirect: "follow",
+      signal: AbortSignal.timeout(12000),
+      headers: {
+        ...PAGE_HEADERS,
+        Accept: "application/json",
+        "X-IG-App-ID": "936619743392459",
+        Referer: target,
+      },
+    });
+    if (!info.ok) return null;
+    const item = (await info.json())?.items?.[0];
+    return findVideoInItem(item);
+  } catch {
+    return null;
+  }
+}
+
+function findVideoInItem(item) {
+  if (!item || typeof item !== "object") return null;
+  if (item.video_versions?.[0]?.url) return item.video_versions[0].url;
+  for (const child of item.carousel_media || []) {
+    const url = findVideoInItem(child);
+    if (url) return url;
+  }
+  return null;
+}
+
+function shortcodeToMediaId(shortcode) {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+  let value = 0n;
+  for (const character of shortcode) {
+    const digit = alphabet.indexOf(character);
+    if (digit < 0) throw new Error("Código de publicación no válido.");
+    value = value * 64n + BigInt(digit);
+  }
+  return value.toString();
 }
 
 async function proxyInstagramMedia(request, response) {
@@ -96,9 +157,22 @@ function extractVideoUrl(html) {
     }
   }
 
-  const jsonMatch = html.match(/["']video_url["']\s*:\s*["']([^"']+)["']/i);
-  if (!jsonMatch) return null;
-  return decodeHtml(jsonMatch[1].replace(/\\u0026/g, "&").replace(/\\\//g, "/"));
+  // Normalizamos entidades HTML y secuencias escapadas presentes en scripts.
+  const normalized = decodeHtml(html)
+    .replace(/\\u0026/gi, "&")
+    .replace(/\\u002f/gi, "/")
+    .replace(/\\\//g, "/")
+    .replace(/\\"/g, '"');
+  const patterns = [
+    /["']video_url["']\s*:\s*["']([^"']+)["']/i,
+    /<video\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/i,
+    /<source\b[^>]*\bsrc\s*=\s*(["'])(.*?)\1/i,
+  ];
+  for (const pattern of patterns) {
+    const match = normalized.match(pattern);
+    if (match) return decodeHtml(match[2] || match[1]);
+  }
+  return null;
 }
 
 function readAttribute(tag, name) {
