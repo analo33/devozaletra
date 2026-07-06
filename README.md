@@ -1,6 +1,6 @@
 # De voz a letra ☀️
 
-Webapp estática para transcribir archivos locales de audio o vídeo a texto. Usa Whisper Tiny mediante [Transformers.js](https://huggingface.co/docs/transformers.js/) y procesa todo directamente en el navegador: no hay servidor, cuentas, API keys ni variables de entorno.
+Webapp para transcribir archivos locales de audio o vídeo y publicaciones públicas de Instagram. Usa Whisper Tiny mediante [Transformers.js](https://huggingface.co/docs/transformers.js/) y ejecuta la transcripción directamente en el navegador, sin API keys ni variables de entorno.
 
 Repositorio de destino: [analo33/devozaletra](https://github.com/analo33/devozaletra).
 
@@ -8,10 +8,10 @@ Repositorio de destino: [analo33/devozaletra](https://github.com/analo33/devozal
 
 - Audio: MP3, WAV, M4A y OGG.
 - Vídeo: MP4, WEBM y MOV (si el navegador soporta su códec de audio).
+- Enlaces de publicaciones, vídeos y Reels públicos de Instagram.
 - Detección automática de español e inglés con Whisper.
 - Modelo cuantizado, caché local y progreso de descarga/transcripción.
 - Edición, copia y descarga del resultado en `.txt`.
-- Dictado con Web Speech API como alternativa si Whisper no puede cargarse.
 - Responsive, accesible y sin proceso de compilación.
 
 > La primera transcripción descarga el modelo Whisper. Las siguientes reutilizan la caché del navegador. El rendimiento depende del equipo y de la duración del archivo.
@@ -38,7 +38,7 @@ git remote add origin https://github.com/analo33/devozaletra.git
 git push -u origin main
 ```
 
-Si el repositorio remoto ya contiene commits, clónalo primero y copia estos cuatro archivos en su raíz para conservar su historial.
+Si el repositorio remoto ya contiene commits, clónalo primero y copia los archivos y la carpeta `api` en su raíz para conservar su historial.
 
 ## Desplegar en Vercel
 
@@ -48,7 +48,7 @@ Si el repositorio remoto ya contiene commits, clónalo primero y copia estos cua
 4. Deja vacíos Build Command y Output Directory.
 5. Pulsa **Deploy**.
 
-`vercel.json` sirve `index.html` y mantiene la app como sitio estático.
+`vercel.json` sirve `index.html` y configura la función `api/instagram.js`. No hay que añadir variables de entorno.
 
 ## Desplegar en GitHub Pages
 
@@ -57,19 +57,21 @@ Si el repositorio remoto ya contiene commits, clónalo primero y copia estos cua
 3. En **Build and deployment**, selecciona **Deploy from a branch**.
 4. Elige la rama **main**, carpeta **/(root)**, y pulsa **Save**.
 
-En unos minutos estará disponible en `https://analo33.github.io/devozaletra/`.
+En unos minutos estará disponible en `https://analo33.github.io/devozaletra/`. En GitHub Pages funciona la subida de archivos locales, pero no la entrada de Instagram porque Pages no ejecuta funciones de servidor.
 
 ## Privacidad y compatibilidad
 
-Los archivos no se suben a ningún servidor. El navegador descarga el modelo desde jsDelivr/Hugging Face y ejecuta la inferencia localmente con WebAssembly. Chrome y Edge recientes ofrecen la mejor compatibilidad. Safari y Firefox pueden variar según el códec del archivo y la memoria disponible.
+Los archivos que eliges desde tu dispositivo no se suben ni se guardan en ningún servidor. El navegador descarga el modelo desde jsDelivr/Hugging Face y ejecuta la inferencia localmente con WebAssembly. Chrome y Edge recientes ofrecen la mejor compatibilidad. Safari y Firefox pueden variar según el códec del archivo y la memoria disponible.
 
-Web Speech API no permite alimentar un archivo directamente: el fallback escucha el micrófono y usa el idioma principal del navegador (español o inglés).
+Para una URL de Instagram, la función de Vercel localiza y retransmite temporalmente el vídeo público al navegador; no lo almacena. Instagram puede bloquear publicaciones, cambiar su formato o exigir inicio de sesión, por lo que solo se ofrece compatibilidad razonable con contenido público.
 
 ## Estructura
 
 ```text
 .
 ├── index.html
+├── api/
+│   └── instagram.js
 ├── README.md
 ├── vercel.json
 └── .gitignore
