@@ -12,7 +12,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@400;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&amp;family=Nunito:wght@400;600;700;800&amp;display=swap"
       rel="stylesheet"
     />
     <style>
@@ -198,6 +198,42 @@
         cursor: pointer;
         transition: 180ms ease;
       }
+
+      .source-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1.35fr) minmax(270px, .65fr);
+        gap: 16px;
+        align-items: stretch;
+      }
+      .source-grid[hidden] { display: none; }
+
+      .url-card {
+        display: flex;
+        min-height: 260px;
+        padding: 28px;
+        border: 1px solid rgba(255, 107, 107, 0.24);
+        border-radius: 28px;
+        background: linear-gradient(150deg, #fffaf8, #fff3ed);
+        flex-direction: column;
+        justify-content: center;
+      }
+
+      .url-icon { margin: 0 0 10px; font-size: 2rem; }
+      .url-title { margin: 0; font-family: "Baloo 2", cursive; font-size: 1.35rem; }
+      .url-copy { margin: 5px 0 16px; color: var(--muted); font-size: .88rem; line-height: 1.45; }
+      .url-form { display: grid; gap: 10px; }
+      .url-input {
+        width: 100%;
+        min-height: 46px;
+        padding: 11px 13px;
+        border: 1.5px solid rgba(24, 59, 72, .14);
+        border-radius: 14px;
+        outline: none;
+        background: white;
+        color: var(--ink);
+      }
+      .url-input:focus { border-color: var(--coral); box-shadow: 0 0 0 3px rgba(255, 107, 107, .12); }
+      .url-note { margin: 10px 0 0; color: #8d7772; font-size: .74rem; line-height: 1.4; }
 
       .drop-zone:hover,
       .drop-zone:focus-visible,
@@ -439,21 +475,6 @@
       .message.info { background: #eaf9fb; color: #17626d; }
       .message.success { background: #edfaf3; color: #206c4b; }
 
-      .fallback {
-        display: none;
-        align-items: center;
-        justify-content: space-between;
-        gap: 18px;
-        margin-top: 15px;
-        padding: 17px;
-        border: 1px solid rgba(255, 107, 107, 0.25);
-        border-radius: 17px;
-        background: #fff8f5;
-      }
-
-      .fallback.is-visible { display: flex; }
-      .fallback p { margin: 0; color: var(--muted); font-size: 0.88rem; line-height: 1.45; }
-
       .facts {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -507,8 +528,9 @@
         .privacy-pill span:last-child { display: none; }
         .app-card { border-radius: 26px; }
         .drop-zone { min-height: 235px; padding: 23px 16px; }
+        .source-grid { grid-template-columns: 1fr; }
+        .url-card { min-height: auto; }
         .facts { grid-template-columns: 1fr; gap: 8px; }
-        .fallback { align-items: stretch; flex-direction: column; }
         .actions .button { flex: 1 1 45%; }
       }
 
@@ -523,7 +545,7 @@
     <main class="shell">
       <header class="topbar">
         <div class="brand"><span class="brand-mark">♪</span> De voz a letra</div>
-        <div class="privacy-pill"><span aria-hidden="true">🔒</span><span>100% en tu navegador</span></div>
+        <div class="privacy-pill"><span aria-hidden="true">🔒</span><span>Whisper procesa el audio localmente</span></div>
       </header>
 
       <section class="app-card" aria-labelledby="main-title">
@@ -531,30 +553,44 @@
           <div class="sun" aria-hidden="true">☀️</div>
           <h1 id="main-title">Tu audio, <span>puesto por escrito</span></h1>
           <p class="tagline">
-            Suelta un audio o vídeo y deja que Whisper haga su magia. El archivo no sale de tu dispositivo.
+            Sube un archivo o pega un Reel público. Whisper convierte su voz en texto desde tu navegador.
           </p>
         </div>
 
-        <div
-          id="drop-zone"
-          class="drop-zone"
-          role="button"
-          tabindex="0"
-          aria-label="Seleccionar o soltar un archivo de audio o vídeo"
-        >
-          <input
-            id="file-input"
-            class="sr-only"
-            type="file"
-            accept=".mp3,.wav,.m4a,.ogg,.mp4,.webm,.mov,audio/mpeg,audio/wav,audio/mp4,audio/ogg,video/mp4,video/webm,video/quicktime"
-          />
-          <div class="drop-content">
-            <div class="upload-icon" aria-hidden="true">↥</div>
-            <p class="drop-title">Arrastra tu archivo hasta aquí</p>
-            <p class="drop-copy">o elígelo desde tu dispositivo</p>
-            <span class="button coral">Elegir archivo</span>
-            <p class="file-types">MP3 · WAV · M4A · OGG · MP4 · WEBM · MOV</p>
+        <div id="source-picker" class="source-grid">
+          <div
+            id="drop-zone"
+            class="drop-zone"
+            role="button"
+            tabindex="0"
+            aria-label="Seleccionar o soltar un archivo de audio o vídeo"
+          >
+            <input
+              id="file-input"
+              class="sr-only"
+              type="file"
+              accept=".mp3,.wav,.m4a,.ogg,.mp4,.webm,.mov,audio/mpeg,audio/wav,audio/mp4,audio/ogg,video/mp4,video/webm,video/quicktime"
+            />
+            <div class="drop-content">
+              <div class="upload-icon" aria-hidden="true">↥</div>
+              <p class="drop-title">Arrastra tu archivo hasta aquí</p>
+              <p class="drop-copy">o elígelo desde tu dispositivo</p>
+              <span class="button coral">Elegir archivo</span>
+              <p class="file-types">MP3 · WAV · M4A · OGG · MP4 · WEBM · MOV</p>
+            </div>
           </div>
+
+          <aside class="url-card" aria-labelledby="instagram-title">
+            <p class="url-icon" aria-hidden="true">📱</p>
+            <h2 id="instagram-title" class="url-title">Desde Instagram</h2>
+            <p class="url-copy">Pega el enlace de una publicación o Reel público.</p>
+            <form id="instagram-form" class="url-form">
+              <label class="sr-only" for="instagram-url">URL pública de Instagram</label>
+              <input id="instagram-url" class="url-input" type="url" inputmode="url" placeholder="https://instagram.com/reel/…" required />
+              <button class="button coral" type="submit">Traer y transcribir</button>
+            </form>
+            <p class="url-note">No funciona con cuentas privadas ni contenido que pida iniciar sesión.</p>
+          </aside>
         </div>
 
         <section id="workspace" class="workspace" aria-label="Archivo seleccionado">
@@ -582,11 +618,6 @@
             </div>
           </div>
 
-          <div id="fallback" class="fallback">
-            <p><strong>Plan B del navegador:</strong> dicta o reproduce el archivo cerca del micrófono. Web Speech no puede leer archivos directamente.</p>
-            <button id="speech-button" class="button coral" type="button">🎙️ Iniciar dictado</button>
-          </div>
-
           <section id="result-panel" class="result-panel" aria-labelledby="result-title">
             <div class="result-head">
               <h2 id="result-title" class="result-title">Tu transcripción</h2>
@@ -604,9 +635,9 @@
       </section>
 
       <section class="facts" aria-label="Características">
-        <div class="fact"><strong>Privado de verdad</strong>El archivo se procesa localmente</div>
+        <div class="fact"><strong>Archivos privados</strong>Los archivos locales no se guardan</div>
         <div class="fact"><strong>Español + English</strong>Whisper detecta el idioma</div>
-        <div class="fact"><strong>Sin cuentas ni límites</strong>Solo necesitas un navegador moderno</div>
+        <div class="fact"><strong>Archivo o Instagram</strong>También admite Reels públicos</div>
       </section>
 
       <footer>Hecho para convertir voces en ideas, sin mandar tus archivos a ninguna nube.</footer>
@@ -620,8 +651,11 @@
       const AUDIO_EXTENSIONS = new Set(["mp3", "wav", "m4a", "ogg"]);
 
       const $ = (selector) => document.querySelector(selector);
+      const sourcePicker = $("#source-picker");
       const dropZone = $("#drop-zone");
       const fileInput = $("#file-input");
+      const instagramForm = $("#instagram-form");
+      const instagramUrl = $("#instagram-url");
       const workspace = $("#workspace");
       const statusPanel = $("#status-panel");
       const progressBar = $("#progress-bar");
@@ -631,12 +665,10 @@
       const resultPanel = $("#result-panel");
       const transcript = $("#transcript");
       const message = $("#message");
-      const fallback = $("#fallback");
 
       let selectedFile = null;
       let transcriber = null;
       let pipelineFactory = null;
-      let recognition = null;
       let isTranscribing = false;
       let activeJob = 0;
 
@@ -666,12 +698,15 @@
         });
       });
       dropZone.addEventListener("drop", (event) => handleFile(event.dataTransfer.files[0]));
+      instagramForm.addEventListener("submit", (event) => {
+        event.preventDefault();
+        handleInstagramUrl(instagramUrl.value.trim());
+      });
 
       $("#remove-file").addEventListener("click", resetApp);
       $("#reset-button").addEventListener("click", resetApp);
       $("#copy-button").addEventListener("click", copyTranscript);
       $("#download-button").addEventListener("click", downloadTranscript);
-      $("#speech-button").addEventListener("click", toggleSpeechRecognition);
 
       async function handleFile(file) {
         if (!file || isTranscribing) return;
@@ -695,13 +730,68 @@
         $("#file-name").textContent = file.name;
         $("#file-meta").textContent = `${formatBytes(file.size)} · ${AUDIO_EXTENSIONS.has(extension) ? "Audio" : "Vídeo"}`;
         $("#file-badge").textContent = AUDIO_EXTENSIONS.has(extension) ? "🎧" : "🎬";
-        dropZone.hidden = true;
+        sourcePicker.hidden = true;
         workspace.classList.add("is-visible");
         transcript.value = "";
         resultPanel.classList.remove("is-visible");
-        fallback.classList.remove("is-visible");
 
         await transcribeFile(file);
+      }
+
+      async function handleInstagramUrl(url) {
+        if (isTranscribing) return;
+        if (!/^https:\/\/(?:www\.)?instagram\.com\//i.test(url)) {
+          showStandaloneError("Pega un enlace válido de instagram.com. Debe ser una publicación o Reel público.");
+          return;
+        }
+
+        clearMessage();
+        sourcePicker.hidden = true;
+        workspace.classList.add("is-visible");
+        resultPanel.classList.remove("is-visible");
+        $("#file-name").textContent = "Publicación de Instagram";
+        $("#file-meta").textContent = "Buscando el vídeo público…";
+        $("#file-badge").textContent = "📱";
+        statusPanel.classList.add("is-visible");
+        document.body.classList.add("is-busy");
+        updateProgress(4, "Conectando con Instagram…");
+        isTranscribing = true;
+        const job = ++activeJob;
+
+        try {
+          const lookup = await fetch("/api/instagram", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+          });
+          const data = await lookup.json().catch(() => ({}));
+          if (!lookup.ok) throw new Error(data.error || "No se pudo leer esa publicación de Instagram.");
+          if (job !== activeJob) return;
+
+          updateProgress(12, "Descargando el vídeo público…");
+          const mediaResponse = await fetch(data.proxyUrl);
+          if (!mediaResponse.ok) throw new Error("Instagram no permitió descargar ese vídeo.");
+          const contentLength = Number(mediaResponse.headers.get("content-length") || 0);
+          if (contentLength > MAX_FILE_SIZE) throw new Error("El vídeo supera 500 MB.");
+          const blob = await mediaResponse.blob();
+          if (blob.size > MAX_FILE_SIZE) throw new Error("El vídeo supera 500 MB.");
+          if (job !== activeJob) return;
+
+          selectedFile = new File([blob], "instagram.mp4", { type: blob.type || "video/mp4" });
+          $("#file-meta").textContent = `${formatBytes(blob.size)} · Vídeo público`;
+          isTranscribing = false;
+          await transcribeFile(selectedFile);
+        } catch (error) {
+          if (job !== activeJob) return;
+          console.error("Instagram error:", error);
+          updateProgress(0, "No pudimos traer la publicación");
+          showMessage(error.message || "No se pudo acceder al vídeo. Comprueba que sea público.", "error");
+        } finally {
+          if (job === activeJob) {
+            isTranscribing = false;
+            document.body.classList.remove("is-busy");
+          }
+        }
       }
 
       async function transcribeFile(file) {
@@ -722,7 +812,7 @@
           updateProgress(10, "Desplegando el modelo Whisper…");
 
           if (!transcriber) {
-            // Importación dinámica: si el CDN falla, la interfaz y Web Speech siguen funcionando.
+            // Importación dinámica: la interfaz sigue disponible aunque falle el CDN.
             if (!pipelineFactory) {
               const transformers = await import(TRANSFORMERS_CDN);
               transformers.env.allowLocalModels = false;
@@ -771,7 +861,6 @@
           const detail = friendlyError(error);
           updateProgress(0, "No pudimos completar la transcripción");
           showMessage(detail, "error");
-          offerSpeechFallback();
         } finally {
           if (job === activeJob) {
             isTranscribing = false;
@@ -797,58 +886,6 @@
         } finally {
           await context.close().catch(() => {});
         }
-      }
-
-      function offerSpeechFallback() {
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRecognition) {
-          showMessage(`${message.textContent} Además, Web Speech no está disponible en este navegador. Prueba Chrome o Edge actualizado.`, "error");
-          return;
-        }
-        fallback.classList.add("is-visible");
-      }
-
-      function toggleSpeechRecognition() {
-        const button = $("#speech-button");
-        if (recognition) {
-          recognition.stop();
-          return;
-        }
-
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        recognition = new SpeechRecognition();
-        recognition.continuous = true;
-        recognition.interimResults = true;
-        recognition.lang = navigator.language?.toLowerCase().startsWith("en") ? "en-US" : "es-ES";
-        let finalText = transcript.value;
-
-        recognition.onstart = () => {
-          button.textContent = "■ Detener dictado";
-          statusPanel.classList.add("is-visible");
-          document.body.classList.add("is-busy");
-          updateProgress(50, "Escuchando con el micrófono…");
-          resultPanel.classList.add("is-visible");
-        };
-        recognition.onresult = (event) => {
-          let interim = "";
-          for (let index = event.resultIndex; index < event.results.length; index += 1) {
-            const text = event.results[index][0].transcript;
-            if (event.results[index].isFinal) finalText += `${finalText ? " " : ""}${text.trim()}`;
-            else interim += text;
-          }
-          transcript.value = `${finalText}${interim ? ` ${interim}` : ""}`.trim();
-        };
-        recognition.onerror = (event) => {
-          showMessage(event.error === "not-allowed" ? "Necesitamos permiso de micrófono para usar el dictado." : "El dictado se ha detenido. Puedes volver a intentarlo.", "error");
-        };
-        recognition.onend = () => {
-          recognition = null;
-          button.textContent = "🎙️ Iniciar dictado";
-          document.body.classList.remove("is-busy");
-          updateProgress(transcript.value ? 100 : 0, transcript.value ? "Dictado terminado" : "Dictado detenido");
-          if (transcript.value) launchConfetti();
-        };
-        recognition.start();
       }
 
       function updateProgress(value, label) {
@@ -888,21 +925,20 @@
         activeJob += 1;
         isTranscribing = false;
         document.body.classList.remove("is-busy");
-        if (recognition) recognition.stop();
         selectedFile = null;
         fileInput.value = "";
+        instagramUrl.value = "";
         transcript.value = "";
         workspace.classList.remove("is-visible");
         resultPanel.classList.remove("is-visible");
         statusPanel.classList.remove("is-visible");
-        fallback.classList.remove("is-visible");
-        dropZone.hidden = false;
+        sourcePicker.hidden = false;
         clearMessage();
         updateProgress(0, "Preparando…");
       }
 
       function showStandaloneError(text) {
-        dropZone.hidden = true;
+        sourcePicker.hidden = true;
         workspace.classList.add("is-visible");
         $("#file-name").textContent = "Archivo no válido";
         $("#file-meta").textContent = "Elige otro archivo";
